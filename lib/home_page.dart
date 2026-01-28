@@ -1,230 +1,153 @@
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatefulWidget {
+
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
+
   var titleController = TextEditingController();
-  var descController = TextEditingController();
+  var descriptionController = TextEditingController();
 
-  String noteCollectionPath = "todo";
-  FirebaseFirestore? firestore;
-  int selectedPriority = 2;
+  String noteCollectionPath = "notes";
+
   List<QueryDocumentSnapshot<Map<String, dynamic>>> mData = [];
-  List<String> mPriority = ["Low", "Medium", "High"];
 
+ FirebaseFirestore? firestore;
 
   @override
   void initState() {
     super.initState();
     firestore = FirebaseFirestore.instance;
+    //fetchNotes();
   }
 
-  void addTodo({
-    required String title,
-    required String desc,
-  }) async {
+  void addNotes({required String title,required String description, required int createdAt})async{
     var docRef = await firestore!.collection(noteCollectionPath).add({
-      "title": title,
-      "desc": desc,
-      "isCompleted": false,
-      "priority": selectedPriority,
-      "createdAt": DateTime.now().millisecondsSinceEpoch,
+      "title":title,
+      "description":description,
+      "createdAt":createdAt,
     });
-
-    print("Doc Created with ${docRef.id}");
-    //setState(() {});
+    print("Doc created with id ${docRef.id}");
+    setState(() {});
+    //fetchNotes();
   }
+
+  /*void fetchNotes()async{
+    var QuerySnap = await firestore!.collection(noteCollectionPath).get();
+   mData = QuerySnap.docs;
+    //setState(() { });
+  }*/
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Home')),
-      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: firestore!.collection(noteCollectionPath).snapshots(),
-        builder: (_, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(child: Text(snapshot.error.toString()));
-          }
-
-          if (snapshot.hasData) {
-
-
-            mData = snapshot.data!.docs;
-            return mData.isNotEmpty
-                ? Padding(
-              padding: const EdgeInsets.all(11.0),
-              child: ListView.builder(
-                itemCount: mData.length,
-                itemBuilder: (_, index) {
-
-                  var eachData = mData[index].data();
-                  Color bgColor = Colors.orange;
-
-                  if(eachData["priority"] == 0){
-                    bgColor = Colors.blue.shade100;
-                  } else if(eachData["priority"] == 1){
-                    bgColor = Colors.orange.shade100;
-                  } else {
-                    bgColor = Colors.red.shade100;
-                  }
-
-                  return Card(
-                    color: bgColor,
-                    child: CheckboxListTile(
-                      controlAffinity: ListTileControlAffinity.leading,
-                      onChanged: (value){
-                        /// update isCompleted
-                        firestore!.collection(noteCollectionPath).doc(mData[index].id).update({
-                          "isCompleted": value,
-                        });
-                        //setState(() {});
-                      },
-                      value: eachData["isCompleted"],
-                      title: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(eachData["title"]),
-                          IconButton(onPressed: (){
-                            showModalBottomSheet(context: context, builder: (context) => Container(
-                              padding: EdgeInsets.symmetric(vertical: 21, horizontal: 11),
-                              width: double.infinity,
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  Text('Are you sure want to delete ?', style: TextStyle(
-                                      fontSize: 21
-                                  ),),
-                                  SizedBox(
-                                    height: 11,
-                                  ),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      OutlinedButton(onPressed: (){
-                                        firestore!.collection(noteCollectionPath).doc(mData[index].id).delete();
-                                        /* setState(() {
-
-                                              });*/
-                                        Navigator.pop(context);
-                                      }, child: Text('Yes', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),)),
-                                      SizedBox(
-                                        width: 11,
-                                      ),
-                                      OutlinedButton(onPressed: (){
-                                        Navigator.pop(context);
-                                      }, child: Text('No')),
-                                    ],
-                                  )
-                                ],
-                              ),
-                            ),);
-                          }, icon: Icon(Icons.delete, color: Colors.red,))
-                        ],
-                      ),
-                      subtitle: Text(eachData["desc"]),
-                    ),
-                  );
-                },
-              ),
-            )
-                : Center(child: Text('No Todos yet!!'));
-          }
-
-          return Container();
-        },
+      appBar: AppBar(
+        actions: [
+          Icon(Icons.notifications_on_sharp,size: 30,),
+          SizedBox(width: 11),
+          Icon(Icons.search,size: 30,),
+          SizedBox(width: 11),
+          Icon(Icons.more_vert,size: 30,),
+          SizedBox(width: 11),
+          
+        ],
+        leading: Icon(Icons.account_circle,size: 30,),
+        foregroundColor: Colors.white,
+        backgroundColor: Colors.amber,
+        title: Text("Note app"),
       ),
+      body: FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(future: firestore!.collection(noteCollectionPath).get(), builder: (context, snapshot){
+        if(snapshot.connectionState==ConnectionState.waiting){
+          return Center(child: CircularProgressIndicator(),);
+        }
+        if(snapshot.hasError){
+          return Center(child: Text(snapshot.error.toString()),);
+        }
+        if(snapshot.hasData){
+          mData = snapshot.data!.docs;
+        return mData.isNotEmpty ? ListView.builder(
+            itemCount: mData.length,
+            itemBuilder: (_, index){
+              return ListTile(
+                title: Text(mData[index].data()["title"]),
+                subtitle: Text(mData[index].data()["description"]),
+                //trailing: Text(mData[index].data()["createdAt"].toString()),
+              );
+            }): Center(
+          child: Text("No Notes"),
+
+        );
+        }
+        return Container();
+      }),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showModalBottomSheet(
-            context: context,
-            builder: (_) {
-              return Container(
-                padding: EdgeInsets.all(11),
-                width: double.infinity,
+          backgroundColor: Colors.amber,
+          child: Icon(Icons.add),
+          onPressed: (){
+        showModalBottomSheet(context: context, builder: (_){
+          return Container(
+            width: double.infinity,
+              child: Padding(
+                padding: const EdgeInsets.all(11),
                 child: Column(
                   children: [
-                    Text(
-                      'Add Note',
-                      style: TextStyle(
-                        fontSize: 21,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 11),
+                    Text("Add Notes", style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold),),
+                    SizedBox(height: 11,),
                     TextField(
                       controller: titleController,
+                      maxLines: 1,
                       decoration: InputDecoration(
-                        labelText: "Title",
-                        hintText: 'Enter title here..',
+                        hintText: "Enter Title here..",
+                        label: Text("Title"),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(11),
                         ),
                       ),
                     ),
-                    SizedBox(height: 11),
+                    SizedBox(height: 11,),
                     TextField(
-                      maxLines: 4,
-                      controller: descController,
+                      controller: descriptionController,
+                      maxLines: 2,
                       decoration: InputDecoration(
                         alignLabelWithHint: true,
-                        labelText: "Description",
-                        hintText: 'Enter description here..',
+                        label: Text("Description"),
+                        hintText: "Enter Desc here..",
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(11),
                         ),
                       ),
                     ),
-                    SizedBox(height: 11),
-                    StatefulBuilder(
-                        builder: (context, ss) {
-                          return Row(
-                              children: List.generate(mPriority.length, (index){
-                                return RadioMenuButton(value: index, groupValue: selectedPriority, onChanged: (value){
-                                  selectedPriority = value ?? 0;
-                                  ss((){});
-                                }, child: Text(mPriority[index]));
-                              })
-                          );
-                        }
-                    ),
-                    SizedBox(height: 11),
+                    SizedBox(height: 21,),
                     Row(
                       children: [
-                        OutlinedButton(
-                          onPressed: () {
-                            addTodo(
+                        OutlinedButton(onPressed: (){
+                          addNotes(
                               title: titleController.text,
-                              desc: descController.text,
-                            );
-                            Navigator.pop(context);
-                          },
-                          child: Text('Save'),
-                        ),
-                        OutlinedButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          child: Text('Cancel'),
-                        ),
+                              description: descriptionController.text,
+                              createdAt: DateTime.now().millisecondsSinceEpoch);
+                          titleController.clear();
+                          descriptionController.clear();
+                          Navigator.pop(context);
+                        }, child: Text("Save")),
+                        SizedBox(width: 11,),
+                        OutlinedButton(onPressed: (){
+                          Navigator.pop(context);
+                        }, child: Text("Cancel")),
                       ],
                     ),
+
+
                   ],
                 ),
-              );
-            },
+              ),
           );
-        },
-        child: Icon(Icons.add),
-      ),
+        });
+      }),
     );
   }
 }
