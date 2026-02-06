@@ -1,9 +1,10 @@
 import 'dart:async';
 
+import 'package:fire_exp_app/todo_home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../home_page.dart';
+//import '../home_page.dart';
 import 'login_page.dart';
 
 class SplashPage extends StatefulWidget {
@@ -25,7 +26,7 @@ class _SplashPageState extends State<SplashPage> {
       Widget nextPage = LoginPage();
 
       if(uid.isNotEmpty){
-        nextPage = HomePage();
+        nextPage = TodoHomePage();
       }
 
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => nextPage));
@@ -37,12 +38,15 @@ class _SplashPageState extends State<SplashPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: Column(
-          children: [
-            FlutterLogo(size: 100),
-            SizedBox(height: 11),
-            Text("Flu", style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold),),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.only(top: 500),
+          child: Column(
+            children: [
+              FlutterLogo(size: 100),
+              SizedBox(height: 11),
+              Text("Flutter App", style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold),),
+            ],
+          ),
         ),
       ),
     );

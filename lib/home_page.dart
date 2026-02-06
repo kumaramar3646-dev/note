@@ -1,6 +1,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
 
@@ -8,26 +9,32 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage>{
 
   var titleController = TextEditingController();
   var descriptionController = TextEditingController();
 
-  String noteCollectionPath = "notes";
+  String noteCollectionPath = "todo";
+  String userCollectionPath = "users";
 
   List<QueryDocumentSnapshot<Map<String, dynamic>>> mData = [];
 
  FirebaseFirestore? firestore;
 
   @override
-  void initState() {
+  void initState(){
     super.initState();
     firestore = FirebaseFirestore.instance;
     //fetchNotes();
   }
+  void addNotes({
+    required String title,
+    required String description,
+    required int createdAt})async{
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String uid = prefs.getString("uid") ?? "";
 
-  void addNotes({required String title,required String description, required int createdAt})async{
-    var docRef = await firestore!.collection(noteCollectionPath).add({
+    var docRef = await firestore!.collection(userCollectionPath).doc(uid).collection(noteCollectionPath).add({
       "title":title,
       "description":description,
       "createdAt":createdAt,
